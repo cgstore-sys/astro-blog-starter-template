@@ -1,30 +1,26 @@
 ---
-// 🖼️ AUTO-LOADING LV GALLERY
+// 🖼️ AUTO-LOADING LV GALLERY — WITH LABELS ON MAIN PHOTOS
 //
 // HOW IT WORKS:
 //   Every photo inside public/images/LV/ is loaded automatically at build
 //   time. You NEVER need to edit this file to add photos — just drop new
-//   JPGs into the LV folder and push to GitHub. The site rebuilds and
-//   shows them.
+//   JPGs into the LV folder and push to GitHub.
+//
+// LABELS:
+//   Main photos (lv1, lv2, lv3, ...) get a caption showing their number.
+//   Detail photos (lv1.1, lv1.2, lv2.1, ...) are shown WITHOUT a caption.
 //
 // TO ADD ANOTHER BRAND:
 //   1. Create a folder in public/images/ (e.g. public/images/gucci/)
 //   2. Drop photos in it
 //   3. Add the brand name to the `brands` list below and add a matching
 //      block after the LV block (copy the pattern).
-//
-// PHOTO NAMING:
-//   Any .jpg / .png / .webp / .gif file works. Photos are shown in
-//   natural order, so lv1.jpg, lv1.1.jpg, lv1.2.jpg, lv2.jpg ... appear
-//   in the right order automatically.
 
 import fs from "node:fs";
 import path from "node:path";
 
 const brands = ["All", "LV"];
 
-// Find the LV folder inside public/images (case-insensitive, so "LV",
-// "lv", or "Lv" all work).
 const imagesRoot = path.join(process.cwd(), "public", "images");
 const brandDirs = fs.existsSync(imagesRoot)
   ? fs.readdirSync(imagesRoot, { withFileTypes: true })
@@ -50,11 +46,18 @@ files.sort((a, b) => {
   return a.localeCompare(b);
 });
 
-const images = files.map((f) => ({
-  src: `/images/${lvDir.name}/${f}`,
-  alt: f.replace(/\.(jpe?g|png|webp|gif)$/i, ""),
-  brand: "LV",
-}));
+const images = files.map((f) => {
+  const stem = f.replace(/\.(jpe?g|png|webp|gif)$/i, "");
+  const numPart = (stem.match(/\d+(\.\d+)?/) || [""])[0];
+  // Main photo = number has no decimal (lv1, lv2, ...). Detail = has decimal.
+  const isMain = numPart !== "" && !numPart.includes(".");
+  return {
+    src: `/images/${lvDir.name}/${f}`,
+    alt: stem,
+    brand: "LV",
+    label: isMain ? `LV ${numPart}` : null,
+  };
+});
 ---
 
 <html lang="en">
@@ -116,6 +119,7 @@ const images = files.map((f) => ({
         overflow: hidden;
         border-radius: 12px;
         background: #1a1d24;
+        position: relative;
       }
       img {
         width: 100%;
@@ -127,6 +131,18 @@ const images = files.map((f) => ({
       }
       figure:hover img {
         transform: scale(1.05);
+      }
+      figcaption {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(0, 0, 0, 0.65);
+        color: #fff;
+        padding: 0.4rem 0.75rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
       }
     </style>
   </head>
@@ -151,6 +167,7 @@ const images = files.map((f) => ({
         images.map((img) => (
           <figure data-brand={img.brand}>
             <img src={img.src} alt={img.alt} loading="lazy" />
+            {img.label && <figcaption>{img.label}</figcaption>}
           </figure>
         ))
       }

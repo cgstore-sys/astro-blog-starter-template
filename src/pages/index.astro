@@ -1,25 +1,60 @@
 ---
-// 🖼️ BRAND-FILTERED IMAGE GALLERY
+// 🖼️ AUTO-LOADING LV GALLERY
 //
-// HOW TO ADD A BRAND:
-//   1. Create a folder inside public/images/ named after the brand,
-//      e.g. public/images/lv/
-//   2. Drop that brand's photos into the folder (photo1.jpg, photo2.jpg, ...)
-//   3. Add the brand name to the `brands` list below
-//   4. Add one line per photo to the `images` list, like:
-//      { src: "/images/lv/photo1.jpg", alt: "LV product", brand: "LV" }
-//   5. Push to GitHub — Cloudflare rebuilds automatically.
+// HOW IT WORKS:
+//   Every photo inside public/images/LV/ is loaded automatically at build
+//   time. You NEVER need to edit this file to add photos — just drop new
+//   JPGs into the LV folder and push to GitHub. The site rebuilds and
+//   shows them.
+//
+// TO ADD ANOTHER BRAND:
+//   1. Create a folder in public/images/ (e.g. public/images/gucci/)
+//   2. Drop photos in it
+//   3. Add the brand name to the `brands` list below and add a matching
+//      block after the LV block (copy the pattern).
+//
+// PHOTO NAMING:
+//   Any .jpg / .png / .webp / .gif file works. Photos are shown in
+//   natural order, so lv1.jpg, lv1.1.jpg, lv1.2.jpg, lv2.jpg ... appear
+//   in the right order automatically.
+
+import fs from "node:fs";
+import path from "node:path";
 
 const brands = ["All", "LV"];
 
-const images = [
-  { src: "/images/lv/photo1.jpg", alt: "LV photo 1", brand: "LV" },
-  { src: "/images/lv/photo2.jpg", alt: "LV photo 2", brand: "LV" },
-  { src: "/images/lv/photo3.jpg", alt: "LV photo 3", brand: "LV" },
-  { src: "/images/lv/photo4.jpg", alt: "LV photo 4", brand: "LV" },
-  { src: "/images/lv/photo5.jpg", alt: "LV photo 5", brand: "LV" },
-  { src: "/images/lv/photo6.jpg", alt: "LV photo 6", brand: "LV" },
-];
+// Find the LV folder inside public/images (case-insensitive, so "LV",
+// "lv", or "Lv" all work).
+const imagesRoot = path.join(process.cwd(), "public", "images");
+const brandDirs = fs.existsSync(imagesRoot)
+  ? fs.readdirSync(imagesRoot, { withFileTypes: true })
+  : [];
+const lvDir = brandDirs.find((d) => d.isDirectory() && /^lv$/i.test(d.name));
+
+const files = lvDir
+  ? fs
+      .readdirSync(path.join(imagesRoot, lvDir.name))
+      .filter((f) => /\.(jpe?g|png|webp|gif)$/i.test(f))
+  : [];
+
+// Natural sort: lv1, lv1.1, lv1.2, lv2, lv2.1, ... lv10, ...
+files.sort((a, b) => {
+  const nums = (s) => (s.match(/\d+(\.\d+)?/g) || []).map(Number);
+  const na = nums(a);
+  const nb = nums(b);
+  for (let i = 0; i < Math.max(na.length, nb.length); i++) {
+    const da = na[i] ?? -1;
+    const db = nb[i] ?? -1;
+    if (da !== db) return da - db;
+  }
+  return a.localeCompare(b);
+});
+
+const images = files.map((f) => ({
+  src: `/images/${lvDir.name}/${f}`,
+  alt: f.replace(/\.(jpe?g|png|webp|gif)$/i, ""),
+  brand: "LV",
+}));
 ---
 
 <html lang="en">

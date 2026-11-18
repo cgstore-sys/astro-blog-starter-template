@@ -1,64 +1,52 @@
-# Astro Starter Kit: Blog
+# Auto-Loading Multi-Brand Gallery
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/templates/tree/main/astro-blog-starter-template)
+A photo gallery that automatically shows every image in every brand folder, with filter buttons for each brand.
 
-![Astro Template Preview](https://github.com/withastro/astro/assets/2244813/ff10799f-a816-4703-b967-c78997e8323d)
+## How it works
 
-<!-- dash-content-start -->
+Every subfolder inside `public/images/` is treated as a brand. The gallery auto-discovers all brand folders at build time, loads their photos, and creates a filter button for each — **no code editing needed to add a brand**.
 
-Create a blog with Astro and deploy it on Cloudflare Workers as a [static website](https://developers.cloudflare.com/workers/static-assets/).
+## Labels
 
-Features:
+- **Main photos** (`brand1.jpg`, `brand2.jpg`, ...) show a caption at the bottom: **BrandName 1**, **BrandName 2**, ...
+- **Detail photos** (`brand1.1.jpg`, `brand1.2.jpg`, ...) show **no caption**.
 
-- ✅ Minimal styling (make it your own!)
-- ✅ 100/100 Lighthouse performance
-- ✅ SEO-friendly with canonical URLs and OpenGraph data
-- ✅ Sitemap support
-- ✅ RSS Feed support
-- ✅ Markdown & MDX support
-- ✅ Built-in Observability logging
+The rule is simple: if the file number has a decimal point, it's a detail shot and gets no label. Otherwise it's a main photo and gets labeled.
 
-<!-- dash-content-end -->
+## Folder layout
 
-## Getting Started
-
-Outside of this repo, you can start a new project with this template using [C3](https://developers.cloudflare.com/pages/get-started/c3/) (the `create-cloudflare` CLI):
-
-```bash
-npm create cloudflare@latest -- --template=cloudflare/templates/astro-blog-starter-template
+```
+astro-blog-starter-template/
+├── public/
+│   └── images/
+│       ├── LV/          ← LV photos (lv1.jpg, lv1.1.jpg, lv2.jpg, ...)
+│       ├── Gucci/       ← Gucci photos (gucci1.jpg, gucci1.1.jpg, gucci2.jpg, ...)
+│       └── Chanel/      ← Chanel photos (chanel1.jpg, chanel1.1.jpg, ...)
+├── src/
+│   └── pages/
+│       └── index.astro  ← the gallery page (auto-loads all brands)
 ```
 
-A live public deployment of this template is available at [https://astro-blog-starter-template.templates.workers.dev](https://astro-blog-starter-template.templates.workers.dev)
+## To add photos to an existing brand
 
-## 🚀 Project Structure
+1. Drop the new JPGs into the brand's folder (e.g. `public/images/LV/`)
+2. Push to GitHub — the site rebuilds and shows them automatically
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+## To add a NEW brand
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+1. Create a folder in `public/images/` named after the brand
+   (e.g. `public/images/Gucci/` — **the folder name becomes the button label**)
+2. Drop that brand's photos in it, numbered like `gucci1.jpg`, `gucci1.1.jpg`, `gucci2.jpg`, ...
+3. Push to GitHub — the site rebuilds and the new brand button appears automatically
 
-The `src/content/` directory contains "collections" of related Markdown and MDX documents. Use `getCollection()` to retrieve posts from `src/content/blog/`, and type-check your frontmatter using an optional schema. See [Astro's Content Collections docs](https://docs.astro.build/en/guides/content-collections/) to learn more.
+That's it. No need to edit any code.
 
-Any static assets, like images, can be placed in the `public/` directory.
+## Photo order
 
-## 🧞 Commands
+Photos appear in natural order within each brand: `brand1.jpg`, `brand1.1.jpg`, `brand1.2.jpg`, `brand2.jpg`, ... `brand10.jpg`. No sorting needed on your end.
 
-All commands are run from the root of the project, from a terminal:
+## Tips
 
-| Command                           | Action                                           |
-| :-------------------------------- | :----------------------------------------------- |
-| `npm install`                     | Installs dependencies                            |
-| `npm run dev`                     | Starts local dev server at `localhost:4321`      |
-| `npm run build`                   | Build your production site to `./dist/`          |
-| `npm run preview`                 | Preview your build locally, before deploying     |
-| `npm run astro ...`               | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help`         | Get help using the Astro CLI                     |
-| `npm run build && npm run deploy` | Deploy your production site to Cloudflare        |
-| `npm wrangler tail`               | View real-time logs for all Workers              |
-
-## 👀 Want to learn more?
-
-Check out [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
-
-## Credit
-
-This theme is based off of the lovely [Bear Blog](https://github.com/HermanMartinus/bearblog/).
+- Supported formats: `.jpg`, `.jpeg`, `.png`, `.webp`, `.gif`
+- The folder name is used as-is for the button label, so name it how you want it displayed (e.g. `Gucci`, not `gucci`)
+- Resize very large photos to ~2000px wide before uploading so pages load fast

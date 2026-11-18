@@ -1,40 +1,40 @@
 ---
-// 🖼️ AUTO-LOADING LV GALLERY — WITH LABELS ON MAIN PHOTOS
+// 🖼️ AUTO-LOADING MULTI-BRAND GALLERY — WITH LABELS ON MAIN PHOTOS
 //
 // HOW IT WORKS:
-//   Every photo inside public/images/LV/ is loaded automatically at build
-//   time. You NEVER need to edit this file to add photos — just drop new
-//   JPGs into the LV folder and push to GitHub.
+//   Every subfolder inside public/images/ is treated as a brand. Each
+//   photo in that folder is loaded automatically at build time, and a
+//   filter button for the brand appears on the page automatically.
+//
+//   YOU NEVER NEED TO EDIT THIS FILE TO ADD A BRAND.
+//   Just create a folder in public/images/ named after the brand
+//   (e.g. public/images/Gucci/), drop photos in it, and push to GitHub.
 //
 // LABELS:
-//   Main photos (lv1, lv2, lv3, ...) get a caption showing their number.
-//   Detail photos (lv1.1, lv1.2, lv2.1, ...) are shown WITHOUT a caption.
+//   Main photos (brand1.jpg, brand2.jpg, ...) get a caption showing the
+//   brand name + number (e.g. "Gucci 1").
+//   Detail photos (brand1.1.jpg, brand1.2.jpg, ...) show NO caption.
 //
-// TO ADD ANOTHER BRAND:
-//   1. Create a folder in public/images/ (e.g. public/images/gucci/)
-//   2. Drop photos in it
-//   3. Add the brand name to the `brands` list below and add a matching
-//      block after the LV block (copy the pattern).
+// TO ADD A BRAND:
+//   1. Create a folder in public/images/ named after the brand
+//      (the folder name becomes the button label, e.g. "Gucci")
+//   2. Drop that brand's photos in it (gucci1.jpg, gucci1.1.jpg, gucci2.jpg, ...)
+//   3. Push to GitHub — the site rebuilds and the new button appears.
 
 import fs from "node:fs";
 import path from "node:path";
 
-const brands = ["All", "LV"];
-
 const imagesRoot = path.join(process.cwd(), "public", "images");
-const brandDirs = fs.existsSync(imagesRoot)
-  ? fs.readdirSync(imagesRoot, { withFileTypes: true })
-  : [];
-const lvDir = brandDirs.find((d) => d.isDirectory() && /^lv$/i.test(d.name));
 
-const files = lvDir
+// Discover every brand folder inside public/images/
+const brandDirs = fs.existsSync(imagesRoot)
   ? fs
-      .readdirSync(path.join(imagesRoot, lvDir.name))
-      .filter((f) => /\.(jpe?g|png|webp|gif)$/i.test(f))
+      .readdirSync(imagesRoot, { withFileTypes: true })
+      .filter((d) => d.isDirectory())
   : [];
 
 // Natural sort: lv1, lv1.1, lv1.2, lv2, lv2.1, ... lv10, ...
-files.sort((a, b) => {
+function naturalSort(a, b) {
   const nums = (s) => (s.match(/\d+(\.\d+)?/g) || []).map(Number);
   const na = nums(a);
   const nb = nums(b);
@@ -44,20 +44,33 @@ files.sort((a, b) => {
     if (da !== db) return da - db;
   }
   return a.localeCompare(b);
-});
+}
 
-const images = files.map((f) => {
-  const stem = f.replace(/\.(jpe?g|png|webp|gif)$/i, "");
-  const numPart = (stem.match(/\d+(\.\d+)?/) || [""])[0];
-  // Main photo = number has no decimal (lv1, lv2, ...). Detail = has decimal.
-  const isMain = numPart !== "" && !numPart.includes(".");
-  return {
-    src: `/images/${lvDir.name}/${f}`,
-    alt: stem,
-    brand: "LV",
-    label: isMain ? `LV ${numPart}` : null,
-  };
-});
+// Build the full image list across all brands
+const images = [];
+for (const dir of brandDirs) {
+  const brand = dir.name;
+  const files = fs
+    .readdirSync(path.join(imagesRoot, brand))
+    .filter((f) => /\.(jpe?g|png|webp|gif)$/i.test(f))
+    .sort(naturalSort);
+
+  for (const f of files) {
+    const stem = f.replace(/\.(jpe?g|png|webp|gif)$/i, "");
+    const numPart = (stem.match(/\d+(\.\d+)?/) || [""])[0];
+    // Main photo = number has no decimal (brand1, brand2, ...). Detail = has decimal.
+    const isMain = numPart !== "" && !numPart.includes(".");
+    images.push({
+      src: `/images/${brand}/${f}`,
+      alt: stem,
+      brand,
+      label: isMain ? `${brand} ${numPart}` : null,
+    });
+  }
+}
+
+// "All" first, then each brand in folder order
+const brands = ["All", ...brandDirs.map((d) => d.name)];
 ---
 
 <html lang="en">
